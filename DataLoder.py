@@ -84,18 +84,20 @@ class DataGenerator:
             elif self.data_type == 'db':
                 self.old_data = self.read_from_db()   
             print('SUCCESS!')
+            old_data.drop(['Unnamed: 0'], axis = 1, inplace = True)
+
         except:
-            old_data = pd.DataFrame()
             if self.data_type == 'csv':
                 error_data = os.path.join(ADDR, FILE_NAME)+'.csv'
             elif self.data_type == 'db':
                 error_data = TABLE_NAME
             print(f'NO SUCH DIRECTORY : {error_data}')
+            old_data = pd.DataFrame(columns=new_data.columns)
             pass
         # old_data.reset_index(inplace=True)
         df = pd.concat([old_data, new_data], axis=0, ignore_index=True)
         df.drop_duplicates(keep = 'first', inplace=True)
-        # df.drop(['Unnamed: 0'], axis = 1, inplace = True)
+        df = df[new_data.columns]
         return df
 
     def upload(self) :
