@@ -107,3 +107,6 @@ class DataGenerator:
         # df['Datetime'] = df['Datetime'].apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
         return df
 
+def to_datetime(datetime):
+    datetime = datetime.apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
+    return datetime

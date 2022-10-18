@@ -18,7 +18,7 @@ def rsi(df, a = 1/14, w=14):
         df['AU'] = df['Up'].ewm(alpha=a, min_periods=w).mean()
         df['AD'] = df['Down'].ewm(alpha=a, min_periods=w).mean()
         df['RSI'] = df['AU'] / (df['AU'] + df['AD']) * 100
-        return df[['RSI', 'Ticker']]
+        return df[['Datetime', 'Ticker', 'RSI']]
     else:
         return None
 
@@ -38,7 +38,7 @@ def macd(df, short=12, long=26, signal=9):
     df['macd'] = (df['ema_short'] - df['ema_long']).round(2)
     df['macd_signal'] = df['macd'].ewm(span=signal).mean().round(2)
     df['macd_oscillator'] = (df['macd'] - df['macd_signal']).round(2)
-    return df[['Ticker', 'macd','macd_signal','macd_oscillator']]
+    return df[['Datetime','Ticker', 'macd','macd_signal','macd_oscillator']]
 
 
 def envelope(df, w=50, spread=.05):
@@ -53,7 +53,7 @@ def envelope(df, w=50, spread=.05):
     df['center'] = df['Adj Close'].rolling(w).mean()
     df['ub'] = df['center']*(1+spread)
     df['lb'] = df['center']*(1-spread)
-    return df[['Ticker', 'center','ub','lb']]
+    return df[['Datetime', 'Ticker', 'center','ub','lb']]
 
 
 def bollinger(df, w=20, k=2):
@@ -69,7 +69,7 @@ def bollinger(df, w=20, k=2):
     df['sigma'] = df['Adj Close'].rolling(w).std()
     df['ub'] = df['center'] + k * df['sigma']
     df['lb'] = df['center'] - k * df['sigma']
-    return df[['Ticker', 'center','ub','lb']]
+    return df[['Datetime', 'Ticker', 'center','ub','lb']]
 
 
 def stochastic(df, symbol, n=14, m=3, t=3):
@@ -88,7 +88,7 @@ def stochastic(df, symbol, n=14, m=3, t=3):
         df['slow_k'] = df['fast_k'].rolling(m).mean().round(2)
         df['slow_d'] = df['slow_k'].rolling(t).mean().round(2)
         df.rename(columns={'Close':df['Ticker'].unique().item()}, inplace=True)
-        df.drop(columns=['High','Open','Low','Volume','Adj Close','fast_k'], inplace=True)
-        return df[[df['Ticker'].unique().item(), 'slow_k', 'slow_d']]
+        # df.drop(columns=['High','Open','Low','Volume','Adj Close','fast_k'], inplace=True)
+        return df[['Datetime', df['Ticker'].unique().item(), 'slow_k', 'slow_d']]
     except:
         return 'Error. The stochastic indicator requires OHLC data and symbol. Try get_ohlc() to retrieve price data.'
