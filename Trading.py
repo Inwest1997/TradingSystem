@@ -10,7 +10,7 @@ class backtester:
     def __init__(self, df, strategy_dict):
         self.df = df
     def strategy(self):
-        
+
         pass 
     def buy():
         pass

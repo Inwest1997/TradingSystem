@@ -5,6 +5,9 @@ import yfinance as yf
 import sqlalchemy
 from tqdm import tqdm
 from sqlalchemy.types import Integer, String, BIGINT
+
+from config import *
+
 '''
 NAME = 'testdb'
 PW = '0000'
@@ -13,18 +16,8 @@ PORT = '5432'
 DB = 'testdb'
 db_info = f'postgresql://{NAME}:{PW}@{USER_NAME}:{PORT}/{DB}'
 '''
-END_DATA = dt.datetime.strftime(dt.datetime.today(), '%Y-%m-%d')
-START_DATA = dt.datetime.strftime(dt.datetime.today() - dt.timedelta(weeks=1), '%Y-%m-%d')
-STOCK_LIST = pd.read_csv('./Dataset/exist_kis_nasdaq_list.csv')
-INTERVAL = '1m'
-SQL  = 'SELECT * FROM tick_stock'
-ADDR = './Dataset'
-FILE_NAME = 'stock_minute'
-DB_INFO = 'postgresql://junginseo:0000@localhost:5432/stock_db'
-TABLE_NAME = 'tick_stock'
-
 class DataGenerator:
-    def __init__(self, addr = ADDR ,file_name = FILE_NAME, sql = SQL, data_type='csv'):
+    def __init__(self, addr = ADDR ,file_name = FILE_NAME, sql = SQL, data_type = DATA_TYPE):
         self.addr = addr
         self.file_name = file_name
         self.data_type = data_type
@@ -35,6 +28,7 @@ class DataGenerator:
         for stock in tqdm(STOCK_LIST['Symbol'][:10]):
             try:
                 _ = yf.download(tickers = stock, start = st_date, end = end_date, interval = itv, progress=False, show_errors=False)
+                _.reset_index(inplace=True)
                 if len(_) == 0:
                     error_stock.append(stock)
                 else :
@@ -83,23 +77,31 @@ class DataGenerator:
 
     def concat(self):
         new_data = self.stock_data_generator()
+        # new_data.reset_index(inplace=True)
         try:
             if self.data_type == 'csv':
-                
-                    old_data = pd.read_csv(f'{os.path.join(self.addr, self.file_name)}.csv')
+                old_data = pd.read_csv(f'{os.path.join(self.addr, self.file_name)}.csv')
             elif self.data_type == 'db':
-                self.old_data = self.read_from_db()            
-            df = pd.concat([old_data, new_data], axis=0)
-            df.drop_duplicates(keep = 'first')
-            return df
+                self.old_data = self.read_from_db()   
+            print('SUCCESS!')
         except:
-            print('NO SUCH DIRECTORY')
-        
+            old_data = pd.DataFrame()
+            if self.data_type == 'csv':
+                error_data = os.path.join(ADDR, FILE_NAME)+'.csv'
+            elif self.data_type == 'db':
+                error_data = TABLE_NAME
+            print(f'NO SUCH DIRECTORY : {error_data}')
+            pass
+        # old_data.reset_index(inplace=True)
+        df = pd.concat([old_data, new_data], axis=0, ignore_index=True)
+        df.drop_duplicates(keep = 'first', inplace=True)
+        # df.drop(['Unnamed: 0'], axis = 1, inplace = True)
+        return df
 
     def upload(self) :
         df = self.concat()
         if self.data_type == 'csv':
-            df.to_csv(f'.Dataset/{self.file_name}.csv')
+            df.to_csv(f'./Dataset/{self.file_name}.csv')
             pass
         elif self.data_type == 'db':
             self.creat_table(TABLE_NAME)
