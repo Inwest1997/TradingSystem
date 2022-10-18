@@ -1,4 +1,4 @@
-from Index_Trend import *
+from index_trend import *
 
 from strategy import *
 
