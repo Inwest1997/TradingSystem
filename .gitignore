@@ -2,3 +2,4 @@
 Dataset/stock_d.csv
 Dataset/stock_m.csv
 Dataset/tick_stock.csv
+*.csv
