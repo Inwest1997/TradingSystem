@@ -1,5 +1,5 @@
 from sqlalchemy import true
-# from Index_Trend import *
+from index_trend import *
 
 '''
 buy signal : 1
@@ -50,4 +50,7 @@ def stochastic_strategy(slow_k, slow_d):
         return 1
     else : 
         return 0
+
+
+
 
