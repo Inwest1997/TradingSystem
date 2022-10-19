@@ -2,14 +2,13 @@ from index_trend import *
 from strategy import *
 
 class backtester:
-    def __init__(self, df, money, stock,strategy = 'rsi'):
+    def __init__(self, df, money, stock, total, strategy = 'rsi'):
         self.df = df
         self.strategy = strategy
         self.money = money
         self.stock = stock
-        self.m_list = []
-        self.s_list = []
         self.stock_name = self.df['Ticker']
+        self.total = total
     def get_strategy(self,  **kwargs) :
         if self.strategy=="rsi" :
             index_df = rsi(self.df, **kwargs)
@@ -37,7 +36,9 @@ class backtester:
         index_df['signal'] = signal
         return index_df   
     def back_trading_result(self, index_df):
-
+        m_list = []
+        s_list = []
+        r_list = []
         for idx, trade in enumerate(index_df['signal']):
             if trade == 1 and self.money > index_df.iloc[idx]['Adj Close']:
                 self.money -= index_df.iloc[idx]['Adj Close']
@@ -47,13 +48,11 @@ class backtester:
                 self.stock -=1
             else:
                 pass
-            self.m_list.append(self.money)
-            self.s_list.append(self.stock)
-        return pd.DataFrame({'Datetime':index_df['Datetime'],'Ticker':index_df['Ticker'], 'signal':index_df['signal'], 'balance':self.m_list, 'stock':self.s_list})
+            m_list.append(self.money)
+            s_list.append(self.stock)
+            self.total = self.money  + self.stock * index_df.iloc[idx]['Adj Close']
+            r_list.append(self.total/m_list[0])
 
+        return pd.DataFrame({'Datetime':index_df['Datetime'],'Ticker':index_df['Ticker'], 'signal':index_df['signal'], 'balance':m_list, 'stock':s_list, 'return':r_list})
 
-    # def buy():
-    #     pass
-    # def sell():
-    #     pass
 
