@@ -92,3 +92,94 @@ def stochastic(df, symbol, n=14, m=3, t=3):
         return df[['Datetime', df['Ticker'].unique().item(), 'slow_k', 'slow_d', 'Adj Close']]
     except:
         return 'Error. The stochastic indicator requires OHLC data and symbol. Try get_ohlc() to retrieve price data.'
+
+
+
+
+class stock_standard():
+    def __init__(self, df, only_ma = True):
+        self.df = df
+        if only_ma == False:
+            self.df = self.moving_average()
+    
+    def moving_average(self):
+        df = self.df.copy()
+        df['MA(120)'] = df['Adj Close'].rolling(120).mean()
+        df['MA(60)'] = df['Adj Close'].rolling(60).mean()
+        df['MA(20)'] = df['Adj Close'].rolling(20).mean()
+        df['MA(5)'] = df['Adj Close'].rolling(5).mean()
+        df.dropna(inplace=True)
+        return df
+
+    def s1(self):
+        s = []
+        for idx in range(len(self.df)):
+            if self.df.iloc[idx]['MA(120)']< self.df.iloc[idx]['MA(60)'] and self.df.iloc[idx]['MA(60)']< self.df.iloc[idx]['MA(20)'] and self.df.iloc[idx]['MA(20)']< self.df.iloc[idx]['MA(5)'] and self.df.iloc[idx]['MA(120)']< self.df.iloc[idx]['Adj Close']:
+                s.append(1)
+            else:        
+                s.append(0)
+        return s
+
+    def s2(self):
+        s = []
+        for idx in range(len(self.df)):
+            if idx < 20:
+                s.append(np.NAN)
+            else:
+                if self.df.iloc[idx]['High'] > self.df.iloc[idx-20]['High']:
+                    s.append(1)
+                else:
+                    s.append(0)
+        return s
+
+    def s3(self):
+        s = []
+        for idx in range(len(self.df)):
+            if idx < 1:
+                s.append(np.NAN)
+            else:
+                if self.df.iloc[idx]['Volume']>self.df.iloc[idx-1]['Volume']*3:
+                    s.append(1)
+                else:
+                    s.append(0)
+        return s
+
+    def s4(self):
+        s = []
+        for idx in range(len(self.df)):
+            if idx < 2:
+                s.append(np.NAN)
+            else:
+                if self.df.iloc[idx-1]['Volume']>self.df.iloc[idx-2]['Volume'] and self.df.iloc[idx-1]['Adj Close']>self.df.iloc[idx-2]['Adj Close'] :
+                    s.append(1)
+                else:
+                    s.append(0)
+        return s
+
+    def s5(self, **kwargs):
+        bol = bollinger(self.df,  **kwargs)[['center','lb', 'Adj Close']]
+        s = []
+        for idx in range(len(self.df)):
+            if bol.iloc[idx]['Adj Close']<bol.iloc[idx]['center'] and bol.iloc[idx]['Adj Close']>bol.iloc[idx]['lb']:
+                s.append(1)
+            else:
+                s.append(0)
+        return s
+   
+    def calculator(self, standard = 2):
+        df = self.df.copy()
+        df['s1'] = self.s1()
+        df['s2'] = self.s2()
+        df['s3'] = self.s3()
+        df['s4'] = self.s4()
+        df['s5'] = self.s5()
+        df.dropna(inplace = True)
+        cnt = []
+        for idx in range(len(df)):
+            if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] >= standard:
+                cnt.append(1)
+            else:
+                cnt.append(0)
+        df['Standard'] = cnt
+        return df
+    
