@@ -4,7 +4,7 @@ import datetime as dt
 import yfinance as yf
 import sqlalchemy
 from tqdm import tqdm
-from sqlalchemy.types import Integer, String, BIGINT
+from sqlalchemy.types import Integer, String, BIGINT, Float
 
 from config import *
 
@@ -21,7 +21,7 @@ class DataGenerator:
     def stock_data_generator(self, itv = INTERVAL, st_date = START_DATA , end_date = END_DATA, error_list = False):
         total_df_list = []
         error_stock = []
-        for stock in tqdm(STOCK_LIST['Symbol'][:10]):
+        for stock in tqdm(STOCK_LIST['Symbol']):
             try:
                 _ = yf.download(tickers = stock, start = st_date, end = end_date, interval = itv, progress=False, show_errors=False)
 
@@ -52,12 +52,12 @@ class DataGenerator:
                                 # "Datetime": sqlalchemy.DateTime,
                                 "TickerName": String(),
                                 "Ticker": String(10)
-                                ,"Open": BIGINT()
-                                , "High": BIGINT()
-                                , "Low": BIGINT()
-                                , "Close": BIGINT()
-                                , "Volume": BIGINT()
-                                , 'Adj Close': BIGINT()
+                                # ,"Open": BIGINT()
+                                # , "High": BIGINT()
+                                # , "Low": BIGINT()
+                                # , "Close": BIGINT()
+                                # , "Volume": BIGINT()
+                                # , 'Adj Close': BIGINT()
                                 }
                         )
             print('DB 저장 완료')
@@ -67,10 +67,10 @@ class DataGenerator:
             conn.close()
 
     
-    def read_from_db(self):
+    def read_from_db(self, sql = SQL):
         engine = sqlalchemy.create_engine(DB_INFO)
         conn = engine.connect()
-        df = pd.read_sql(SQL, conn)
+        df = pd.read_sql(sql, conn)
         print('DB에서 이전 데이터 불러오기 성공')
         conn.close()
         return df

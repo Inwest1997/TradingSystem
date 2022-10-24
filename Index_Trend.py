@@ -175,6 +175,7 @@ class stock_standard():
         df['s5'] = self.s5()
         df.dropna(inplace = True)
         cnt = []
+        
         for idx in range(len(df)):
             if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] >= standard:
                 cnt.append(1)
