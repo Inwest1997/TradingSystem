@@ -5,3 +5,4 @@ Dataset/tick_stock.csv
 *.csv
 dummy/mojito_test.ipynb
 Dataset/stock_minute.csv.zip
+*.zip

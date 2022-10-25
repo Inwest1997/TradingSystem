@@ -1,51 +1,109 @@
 import os
 import pandas as pd
 import datetime as dt
+
+
 import yfinance as yf
 import sqlalchemy
 from tqdm import tqdm
-from sqlalchemy.types import Integer, String, BIGINT, Float
+from sqlalchemy.types import Integer, String, BIGINT
 
-from config import *
+stock_list = pd.read_csv('./Dataset/exist_kis_nasdaq_list.csv')
+db_info = 'postgresql://junginseo:0000@localhost:5432/stock_db'
 
-'''
-NAME = 'testdb'
-PW = '0000'
-USER_NAME = 'localhost'
-PORT = '5432'
-DB = 'testdb'
-db_info = f'postgresql://{NAME}:{PW}@{USER_NAME}:{PORT}/{DB}'
-'''
 class DataGenerator:
+    def __init__(self, data_type, interval = 'day') -> None:
+        '''
+        date_type : db or csv
+        interval: day or min
+        '''
+        self.data_type = data_type
+        self.interval = interval
+        self.end_date = dt.datetime.today()
 
-    def stock_data_generator(self, itv = INTERVAL, st_date = START_DATA , end_date = END_DATA, error_list = False):
+    def read_from_csv(self, dir = './Dataset', file = 'stock_d'):
+        self.origin = pd.read_csv(f'{os.path.join(dir, file)}.csv')
+        self.dir = dir
+        self.file = file
+        print('파일에서 CSV 데이터 불러오기 성공')
+
+
+    def read_from_db(self, db_info = db_info, table_name='tick_stock', sql = None):
+        self.db_info = db_info
+        self.table_name = table_name
+        engine = sqlalchemy.create_engine(self.db_info)
+        conn = engine.connect()
+        if sql == None:
+            sql = f'''SELECT * FROM {self.table_name}'''
+        self.origin = pd.read_sql(sql, conn)
+        print('DB에서 데이터 불러오기 성공')
+        conn.close()
+
+
+    def read_origin_data(self, **kwargs):
+        if self.data_type == 'csv':
+            self.read_from_csv(**kwargs)
+        elif self.data_type == 'db':
+            self.read_from_db(**kwargs)
+
+
+    def date_gap(self):
+        return (self.end_date - dt.datetime.strptime(self.origin.Datetime.max(), '%Y-%m-%d')).days
+
+                
+
+    def stock_data_generator(self,  error_list = False, stock_list = stock_list) :
         total_df_list = []
         error_stock = []
-        for stock in tqdm(STOCK_LIST['Symbol']):
+        itv = '1'+self.interval[0]
+        if self.data_type == 'min' and self.date_gap() > 7:
+            st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=1), '%Y-%m-%d')
+        elif self.data_type == 'day':
+            st_date = dt.datetime.strftime(self.origin.Datetime.max() + dt.timedelta(days=1), '%Y-%m-%d')
+        else:
+            st_date = self.origin.Datetime.max() 
+        for stock in tqdm(stock_list['Symbol']):
             try:
-                _ = yf.download(tickers = stock, start = st_date, end = end_date, interval = itv, progress=False, show_errors=False)
-
+                _ = yf.download(tickers = stock, start = st_date, end = self.end_date, interval = itv, progress=False, show_errors=False)
+                _.reset_index(inplace=True)
+                _.rename(columns={'Date':'Datetime'},inplace=True)
                 if len(_) == 0:
                     error_stock.append(stock)
                 else :
                     _['Ticker'] = stock
-                    _['TickerName'] = STOCK_LIST[STOCK_LIST['Symbol']==stock]['Name'].item()
+                    _['TickerName'] = stock_list[stock_list['Symbol']==stock]['Name'].item()
                     total_df_list.append(_)
             except:
                 print('ERROR!')
                 continue
-
+        self.new = pd.concat(total_df_list)
         if error_list == True:
-            return pd.concat(total_df_list), error_stock
-        else :
-            return pd.concat(total_df_list)
+            return error_stock
+        
 
-    def creat_table(self,df, tb_name = TABLE_NAME, exist = 'replace'):
-        engine = sqlalchemy.create_engine(DB_INFO)
-        conn = engine.connect()
-        print('DB 연동 성공')
+    def data_concat(self) :
+
+        try:
+            self.read_origin_data()
+            self.stock_data_generator()
+            print('SUCCESS!')
+            self.concat = pd.concat([self.origin, self.new], axis=0)
+            self.concat.reset_index(drop = True)
+            self.concat.drop_duplicates(keep = 'first', inplace=True)
+
+        except Exception as e:
+            # print(f'NO SUCH DIRECTORY OR TABLE')
+            print('에러 발생 : ',e)
+            pass
+
+
+
+    def creat_table(self, exist = 'append'):
         try :
-            df.to_sql(tb_name, conn
+            engine = sqlalchemy.create_engine(self.db_info)
+            conn = engine.connect()
+            print('DB 연동 성공')
+            self.new.to_sql(self.table_name, conn
                         , if_exists=  exist# ---append, replace
                         , index=False
                         , dtype={
@@ -61,60 +119,23 @@ class DataGenerator:
                                 }
                         )
             print('DB 저장 완료')
+
             conn.close()
         except Exception as e:
             print(e, '로 인해 DB 저장 실패')
-            conn.close()
 
-    
-    def read_from_db(self, sql = SQL):
-        engine = sqlalchemy.create_engine(DB_INFO)
-        conn = engine.connect()
-        df = pd.read_sql(sql, conn)
-        print('DB에서 이전 데이터 불러오기 성공')
-        conn.close()
-        return df
-
-    def concat(self):
-        new_data = self.stock_data_generator()
-        print('인터넷에서 새로운 데이터 불러오기 성공')
-        new_data.reset_index(inplace = True)
-        new_data.index.name = 'Index'
-        
-        try:
-            if DATA_TYPE == 'csv':
-                old_data = pd.read_csv(f'{os.path.join(ADDR, FILE_NAME)}.csv', index_col='index')
-            elif DATA_TYPE == 'db':
-                old_data = self.read_from_db()
-
-            print('SUCCESS!')
-
-        except Exception as e:
-
-            if DATA_TYPE == 'csv':
-                error_data = os.path.join(ADDR, FILE_NAME)+'.csv'
-            elif DATA_TYPE == 'db':
-                error_data = TABLE_NAME
-                print(f'NO SUCH DIRECTORY : {error_data}')
-            old_data = pd.DataFrame(columns=new_data.columns)
-            print('에러 발생 : ',e)
-            pass
-        df = pd.concat([old_data, new_data], axis=0)
-        df.drop_duplicates(keep = 'first', inplace=True)
-        return df
-
-    def upload(self) :
-        df = self.concat()
-        print('데이터 병합 성공')
-        if DATA_TYPE == 'csv':
-            df.to_csv(f'./Dataset/{FILE_NAME}.csv',index=False)
-            pass
-        elif DATA_TYPE == 'db':
-            self.creat_table(df, TABLE_NAME)
+    def upload(self) -> None:
+        if self.data_type == 'csv':
+            self.data_concat()
+            print('데이터 병합 성공')
+            self.concat.to_csv(f'./Dataset/{self.file}.csv',index=False)
+        elif self.data_type == 'db':
+            self.stock_data_generator()
+            self.creat_table()
         else:
             print('데이터 타입을 확인해주세요.')
         # df['Datetime'] = df['Datetime'].apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
-        return df
+
 
 def to_datetime(datetime, type = 'm'):
     if type == 'm':
@@ -123,6 +144,3 @@ def to_datetime(datetime, type = 'm'):
         datetime = datetime.apply(lambda x : dt.datetime.strptime(x, '%Y-%m-%d'))
     return datetime
 
-
-def data_reader():
-    pass
