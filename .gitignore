@@ -1,8 +1,6 @@
-
-Dataset/stock_d.csv
-Dataset/stock_m.csv
-Dataset/tick_stock.csv
 *.csv
-dummy/mojito_test.ipynb
-Dataset/stock_minute.csv.zip
+dummy
 *.zip
+strategy/__pycache__
+__pycache__
+.ipynb_checkpoints
