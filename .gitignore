@@ -2,3 +2,4 @@
 dummy
 *.zip
 .ipynb_checkpoints
+*.pyc
