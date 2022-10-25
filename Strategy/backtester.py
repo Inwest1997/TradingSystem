@@ -164,7 +164,7 @@ class BacktestLongShort(BacktestBase):
                 amount = self.amount
             self.place_sell_order(bar, amount=amount)
 
-    def run_sma_strategy(self, SMA1, SMA2):
+    def run_sma_strategy(self, SMA1, SMA2, re = False):
         msg = f'\n\nRunning SMA strategy | SMA1={SMA1} & SMA2={SMA2}'
         msg += f'\nfixed costs {self.ftc} | '
         msg += f'proportional costs {self.ptc}'
@@ -185,9 +185,13 @@ class BacktestLongShort(BacktestBase):
                 if self.data['SMA1'].iloc[bar] < self.data['SMA2'].iloc[bar]:
                     self.go_short(bar, amount='all')
                     self.position = -1  # short position
+        am, per, tra = self.amount, ((self.amount - self.initial_amount) / self.initial_amount * 100), self.trades
+        
         self.close_out(bar)
+        if  re == True:
+            return am, per, tra
 
-    def run_momentum_strategy(self, momentum):
+    def run_momentum_strategy(self, momentum, re = False):
         msg = f'\n\nRunning momentum strategy | {momentum} days'
         msg += f'\nfixed costs {self.ftc} | '
         msg += f'proportional costs {self.ptc}'
@@ -206,9 +210,14 @@ class BacktestLongShort(BacktestBase):
                 if self.data['momentum'].iloc[bar] <= 0:
                     self.go_short(bar, amount='all')
                     self.position = -1  # short position
+        am, per, tra = self.amount, ((self.amount - self.initial_amount) / self.initial_amount * 100), self.trades
+        
         self.close_out(bar)
+        if  re == True:
+            return am, per, tra
 
-    def run_mean_reversion_strategy(self, SMA, threshold):
+        
+    def run_mean_reversion_strategy(self, SMA, threshold, re = False):
         msg = f'\n\nRunning mean reversion strategy | '
         msg += f'SMA={SMA} & thr={threshold}'
         msg += f'\nfixed costs {self.ftc} | '
@@ -224,7 +233,7 @@ class BacktestLongShort(BacktestBase):
         for bar in range(SMA, len(self.data)):
             if self.position == 0:
                 if (self.data['price'].iloc[bar] <
-                        self.data['SMA'].iloc[bar] - threshold):
+                      self.data['SMA'].iloc[bar] - threshold):
                     self.go_long(bar, amount=self.initial_amount)
                     self.position = 1
                 elif (self.data['price'].iloc[bar] >
@@ -239,4 +248,7 @@ class BacktestLongShort(BacktestBase):
                 if self.data['price'].iloc[bar] <= self.data['SMA'].iloc[bar]:
                     self.place_buy_order(bar, units=-self.units)
                     self.position = 0
+        am, per, tra = self.amount, ((self.amount - self.initial_amount) / self.initial_amount * 100), self.trades
         self.close_out(bar)
+        if  re == True:
+            return am, per, tra
