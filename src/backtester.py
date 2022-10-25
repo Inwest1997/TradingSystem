@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from data_loader import *
+from src.data_loader import *
 
 import numpy as np
 import pandas as pd
@@ -64,7 +64,7 @@ class BacktestBase(object):
     def get_data(self):
         ''' Retrieves and prepares the data.
         '''
-        raw = self.data[self.data['Ticker'] == self.symbol][['Date', 'Adj Close']].set_index('Date')
+        raw = self.data[self.data['Ticker'] == self.symbol][['Datetime', 'Adj Close']].set_index('Datetime')
         raw = raw.loc[self.start:self.end]
         raw.rename(columns={'Adj Close': 'price'}, inplace=True)
         raw['return'] = np.log(raw / raw.shift(1))

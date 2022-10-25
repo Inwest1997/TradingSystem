@@ -1,5 +1,5 @@
 from sqlalchemy import true
-from index_trend import *
+from src.index_trend import *
 
 '''
 buy signal : 1

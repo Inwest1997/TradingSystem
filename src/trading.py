@@ -1,5 +1,5 @@
-from index_trend import *
-from strategy import *
+from src.index_trend import *
+from src.strategy import *
 
 class backtester:
     def __init__(self, df, money, stock, total, strategy = 'rsi'):
