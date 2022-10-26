@@ -12,7 +12,7 @@ stock_list = pd.read_csv('./Dataset/exist_kis_nasdaq_list.csv')
 info = 'postgresql://junginseo:0000@localhost:5432/stock_db'
 
 class DataGenerator:
-    def __init__(self, data_type, db_info = info, interval = 'day') -> None:
+    def __init__(self, data_type, interval = 'day', db_info = info) -> None:
         '''
         date_type : db or csv
         interval: day or min
@@ -29,7 +29,7 @@ class DataGenerator:
 
 
     def read_from_csv(self, dir = './Dataset',ticker = None):
-        self.origin = pd.read_csv(f'{os.path.join(dir, self.table_name)}.csv')
+        self.origin = pd.read_csv(f'{os.path.join(dir, self.table_name)}.csv', index_col=0)
         if ticker != None:
             self.origin = self.origin[self.origin['Ticker']==ticker]
         self.dir = dir
@@ -46,8 +46,8 @@ class DataGenerator:
             sql = f'''SELECT * FROM {self.table_name} WHERE "{self.table_name}"."Ticker" = '{ticker}';'''
 
         self.origin = pd.read_sql(sql, conn)
-        self.origin['Datetime'] = self.origin['Datetime'][self.origin['Datetime'].str.contains('00:00:00')].apply(lambda x : x[:10])
-
+        # self.origin['Datetime']
+        self.origin['Datetime'] = self.origin['Datetime'].apply(lambda x : x.strftime('%Y-%m-%d')[:10])
         print('DB에서 데이터 불러오기 성공')
         conn.close()
 
@@ -57,7 +57,7 @@ class DataGenerator:
             self.read_from_csv(**kwargs)
         elif self.data_type == 'db':
             self.read_from_db(**kwargs)
-
+        # self.origin.apply(lambda x: dt.datetime.strptime(x['Datetime'], '%Y-%m-%d')).sort_values(by = ['Datetime'])
 
     def date_gap(self):
         return (self.end_date - dt.datetime.strptime(self.origin.Datetime.max(), '%Y-%m-%d')).days
@@ -163,7 +163,7 @@ class DataGenerator:
             self.origin = self.origin[self.origin['Datetime']>=stard_date]
         if end_date != None:
             self.origin = self.origin[self.origin['Datetime']<=end_date]
-        return self.origin.set_index('Datetime')
+        return self.origin.set_index('Datetime').drop('Ticker', axis = 1).sort_index()
 
 
 
