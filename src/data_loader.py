@@ -9,33 +9,45 @@ from tqdm import tqdm
 from sqlalchemy.types import Integer, String, BIGINT
 
 stock_list = pd.read_csv('./Dataset/exist_kis_nasdaq_list.csv')
-db_info = 'postgresql://junginseo:0000@localhost:5432/stock_db'
+info = 'postgresql://junginseo:0000@localhost:5432/stock_db'
 
 class DataGenerator:
-    def __init__(self, data_type, interval = 'day') -> None:
+    def __init__(self, data_type, db_info = info, interval = 'day') -> None:
         '''
         date_type : db or csv
         interval: day or min
         '''
+        
         self.data_type = data_type
         self.interval = interval
+        if self.interval == 'day':
+            self.table_name = 'daily_stock'
+        elif self.interval == 'min':
+            self.table_name = 'tick_stock'
         self.end_date = dt.datetime.today()
+        self.db_info = db_info
 
-    def read_from_csv(self, dir = './Dataset', file = 'stock_d'):
-        self.origin = pd.read_csv(f'{os.path.join(dir, file)}.csv')
+
+    def read_from_csv(self, dir = './Dataset',ticker = None):
+        self.origin = pd.read_csv(f'{os.path.join(dir, self.table_name)}.csv')
+        if ticker != None:
+            self.origin = self.origin[self.origin['Ticker']==ticker]
         self.dir = dir
-        self.file = file
         print('파일에서 CSV 데이터 불러오기 성공')
 
 
-    def read_from_db(self, db_info = db_info, table_name='tick_stock', sql = None):
-        self.db_info = db_info
-        self.table_name = table_name
+    def read_from_db(self, sql = None, ticker = None):
+
         engine = sqlalchemy.create_engine(self.db_info)
         conn = engine.connect()
         if sql == None:
             sql = f'''SELECT * FROM {self.table_name}'''
+        if ticker != None:
+            sql = f'''SELECT * FROM {self.table_name} WHERE "{self.table_name}"."Ticker" = '{ticker}';'''
+
         self.origin = pd.read_sql(sql, conn)
+        self.origin['Datetime'] = self.origin['Datetime'][self.origin['Datetime'].str.contains('00:00:00')].apply(lambda x : x[:10])
+
         print('DB에서 데이터 불러오기 성공')
         conn.close()
 
@@ -52,26 +64,33 @@ class DataGenerator:
 
                 
 
-    def stock_data_generator(self,  error_list = False, stock_list = stock_list) :
+    def stock_data_generator(self,  error_list = False, stock_list = stock_list, all = False) :
         total_df_list = []
         error_stock = []
         itv = '1'+self.interval[0]
-        if self.data_type == 'min' and self.date_gap() > 7:
-            st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=1), '%Y-%m-%d')
-        elif self.data_type == 'day':
-            st_date = dt.datetime.strftime(self.origin.Datetime.max() + dt.timedelta(days=1), '%Y-%m-%d')
+
+        if all == True:
+            if self.interval == 'day':
+                st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=52*30), '%Y-%m-%d')
+            elif self.interval == 'min':
+                st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=1), '%Y-%m-%d')
         else:
-            st_date = self.origin.Datetime.max() 
+            if self.interval == 'min' and self.date_gap() > 7:
+                st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=1), '%Y-%m-%d')
+            elif self.interval == 'day':
+                st_date = dt.datetime.strftime(self.origin.Datetime.max() + dt.timedelta(days=1), '%Y-%m-%d')
+            else:
+                st_date = self.origin.Datetime.max() 
         for stock in tqdm(stock_list['Symbol']):
             try:
                 _ = yf.download(tickers = stock, start = st_date, end = self.end_date, interval = itv, progress=False, show_errors=False)
-                _.reset_index(inplace=True)
-                _.rename(columns={'Date':'Datetime'},inplace=True)
                 if len(_) == 0:
                     error_stock.append(stock)
                 else :
+                    _.reset_index(inplace=True)
+                    _.rename(columns={'Date':'Datetime'},inplace=True)
                     _['Ticker'] = stock
-                    _['TickerName'] = stock_list[stock_list['Symbol']==stock]['Name'].item()
+                    # _['TickerName'] = stock_list[stock_list['Symbol']==stock]['Name'].item()
                     total_df_list.append(_)
             except:
                 print('ERROR!')
@@ -87,6 +106,7 @@ class DataGenerator:
             self.read_origin_data()
             self.stock_data_generator()
             print('SUCCESS!')
+            
             self.concat = pd.concat([self.origin, self.new], axis=0)
             self.concat.reset_index(drop = True)
             self.concat.drop_duplicates(keep = 'first', inplace=True)
@@ -108,7 +128,7 @@ class DataGenerator:
                         , index=False
                         , dtype={
                                 # "Datetime": sqlalchemy.DateTime,
-                                "TickerName": String(),
+                                # "TickerName": String(),
                                 "Ticker": String(10)
                                 # ,"Open": BIGINT()
                                 # , "High": BIGINT()
@@ -136,11 +156,22 @@ class DataGenerator:
             print('데이터 타입을 확인해주세요.')
         # df['Datetime'] = df['Datetime'].apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
 
+    def data_search(self, ticker= None, stard_date=None, end_date=None):
+        self.read_origin_data(ticker = ticker)
+        self.origin['Datetime'] = to_datetime(datetime = self.origin['Datetime'],type = self.interval)
+        if stard_date != None:
+            self.origin = self.origin[self.origin['Datetime']>=stard_date]
+        if end_date != None:
+            self.origin = self.origin[self.origin['Datetime']<=end_date]
+        return self.origin.set_index('Datetime')
 
-def to_datetime(datetime, type = 'm'):
-    if type == 'm':
-        datetime = datetime.apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
-    elif type == 'd':
-        datetime = datetime.apply(lambda x : dt.datetime.strptime(x, '%Y-%m-%d'))
+
+
+def to_datetime(datetime, type = 'min'):
+
+    if type == 'min':
+        datetime = datetime.apply(lambda x : dt.datetime.strptime(str(x)[:-6], '%Y-%m-%d %H:%M:%S'))
+    elif type == 'day':
+        datetime = datetime.apply(lambda x : dt.datetime.strptime(str(x), '%Y-%m-%d'))
     return datetime
 
