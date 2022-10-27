@@ -46,7 +46,6 @@ class DataGenerator:
             sql = f'''SELECT * FROM {self.table_name} WHERE "{self.table_name}"."Ticker" = '{ticker}';'''
 
         self.origin = pd.read_sql(sql, conn)
-        # self.origin['Datetime']
         self.origin['Datetime'] = self.origin['Datetime'].apply(lambda x : x.strftime('%Y-%m-%d')[:10])
         print('DB에서 데이터 불러오기 성공')
         conn.close()
@@ -57,7 +56,6 @@ class DataGenerator:
             self.read_from_csv(**kwargs)
         elif self.data_type == 'db':
             self.read_from_db(**kwargs)
-        # self.origin.apply(lambda x: dt.datetime.strptime(x['Datetime'], '%Y-%m-%d')).sort_values(by = ['Datetime'])
 
     def date_gap(self):
         return (self.end_date - dt.datetime.strptime(self.origin.Datetime.max(), '%Y-%m-%d')).days
@@ -90,7 +88,6 @@ class DataGenerator:
                     _.reset_index(inplace=True)
                     _.rename(columns={'Date':'Datetime'},inplace=True)
                     _['Ticker'] = stock
-                    # _['TickerName'] = stock_list[stock_list['Symbol']==stock]['Name'].item()
                     total_df_list.append(_)
             except:
                 print('ERROR!')
@@ -103,8 +100,10 @@ class DataGenerator:
     def data_concat(self) :
 
         try:
-            self.read_origin_data()
-            self.stock_data_generator()
+            if self.origin==None:
+                self.read_origin_data()
+            if self.new == None:
+                self.stock_data_generator()
             print('SUCCESS!')
             
             self.concat = pd.concat([self.origin, self.new], axis=0)
