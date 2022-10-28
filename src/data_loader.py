@@ -27,7 +27,6 @@ class DataGenerator:
         self.end_date = dt.datetime.today()
         self.db_info = db_info
 
-
     def read_from_csv(self, dir = './Dataset',ticker = None):
         self.origin = pd.read_csv(f'{os.path.join(dir, self.table_name)}.csv', index_col=0)
         if ticker != None:
@@ -76,7 +75,7 @@ class DataGenerator:
             if self.interval == 'min' and self.date_gap() > 7:
                 st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=1), '%Y-%m-%d')
             elif self.interval == 'day':
-                st_date = dt.datetime.strftime(self.origin.Datetime.max() + dt.timedelta(days=1), '%Y-%m-%d')
+                st_date = dt.datetime.strftime(dt.datetime.strptime(self.origin.Datetime.max(),'%Y-%m-%d') + dt.timedelta(days=1), '%Y-%m-%d')
             else:
                 st_date = self.origin.Datetime.max() 
         for stock in tqdm(stock_list['Symbol']):
@@ -144,16 +143,27 @@ class DataGenerator:
             print(e, '로 인해 DB 저장 실패')
 
     def upload(self) -> None:
-        if self.data_type == 'csv':
-            self.data_concat()
-            print('데이터 병합 성공')
-            self.concat.to_csv(f'./Dataset/{self.file}.csv',index=False)
-        elif self.data_type == 'db':
-            self.stock_data_generator()
-            self.creat_table()
-        else:
-            print('데이터 타입을 확인해주세요.')
-        # df['Datetime'] = df['Datetime'].apply(lambda x : dt.datetime.strptime(x[:-6], '%Y-%m-%d %H:%M:%S'))
+        try:
+            if self.data_type == 'csv':
+                self.data_concat()
+                print('데이터 병합 성공')
+                self.concat.to_csv(f'./Dataset/{self.file}.csv',index=False)
+            elif self.data_type == 'db':
+                self.stock_data_generator()
+                self.creat_table()
+            else:
+                print('데이터 타입을 확인해주세요.')
+        except:
+            self.read_origin_data()
+            if self.data_type == 'csv':
+                self.data_concat()
+                print('데이터 병합 성공')
+                self.concat.to_csv(f'./Dataset/{self.file}.csv',index=False)
+            elif self.data_type == 'db':
+                self.stock_data_generator()
+                self.creat_table()
+            else:
+                print('데이터 타입을 확인해주세요.')
 
     def data_search(self, ticker= None, stard_date=None, end_date=None):
         self.read_origin_data(ticker = ticker)
