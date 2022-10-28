@@ -100,3 +100,4 @@ def sma(df, w=5):
     df[f'SMA({w})'] = df['Adj Close'].rolling(w).mean()
 
     return df[[f'SMA({w})']]
+

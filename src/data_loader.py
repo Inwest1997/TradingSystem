@@ -32,7 +32,7 @@ class DataGenerator:
         if ticker != None:
             self.origin = self.origin[self.origin['Ticker']==ticker]
         self.dir = dir
-        print('파일에서 CSV 데이터 불러오기 성공')
+        # print('파일에서 CSV 데이터 불러오기 성공')
 
 
     def read_from_db(self, sql = None, ticker = None):
@@ -46,7 +46,7 @@ class DataGenerator:
 
         self.origin = pd.read_sql(sql, conn)
         self.origin['Datetime'] = self.origin['Datetime'].apply(lambda x : x.strftime('%Y-%m-%d')[:10])
-        print('DB에서 데이터 불러오기 성공')
+        # print('DB에서 데이터 불러오기 성공')
         conn.close()
 
 
@@ -116,11 +116,11 @@ class DataGenerator:
 
 
 
-    def creat_table(self, exist = 'append'):
+    def upload_to_table(self, exist = 'append'):
         try :
             engine = sqlalchemy.create_engine(self.db_info)
             conn = engine.connect()
-            print('DB 연동 성공')
+            # print('DB 연동 성공')
             self.new.to_sql(self.table_name, conn
                         , if_exists=  exist# ---append, replace
                         , index=False
@@ -136,7 +136,7 @@ class DataGenerator:
                                 # , 'Adj Close': BIGINT()
                                 }
                         )
-            print('DB 저장 완료')
+            # print('DB 저장 완료')
 
             conn.close()
         except Exception as e:

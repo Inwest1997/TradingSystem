@@ -68,8 +68,6 @@ class stock_standard():
         s = [np.NAN if idx == 0 else 1 if pdi[idx] + adx[idx] > mdi[idx] and adx[idx]>adx[idx] else 0 for idx in range(len(self.df))]
         return s
 
-    def calculator(self, standard = 5)
-    
     def calculator(self, standard = 2):
         df = self.df.copy()
         df['s1'] = self.s1()
@@ -82,8 +80,7 @@ class stock_standard():
         df['s8'] = self.s8()
         df['s9'] = self.s9()
         df.dropna(inplace = True)
-       
-       
         cnt = [1 if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] + df.iloc[idx]['s6'] + df.iloc[idx]['s7'] + df.iloc[idx]['s8'] + df.iloc[idx]['s9'] >= standard else 0 for idx in range(len(df))]
         df['Standard'] = cnt
         return df
+
