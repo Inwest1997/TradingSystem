@@ -70,15 +70,17 @@ class stock_standard():
 
     def calculator(self, standard = 2):
         df = self.df.copy()
-        df['s1'] = self.s1()
-        df['s2'] = self.s2()
-        df['s3'] = self.s3()
-        df['s4'] = self.s4()
-        df['s5'] = self.s5()
-        df['s6'] = self.s6()
-        df['s7'] = self.s7()
-        df['s8'] = self.s8()
-        df['s9'] = self.s9()
+        for i in range(1,10):
+            exec(f"df['s{i}']=self.s{i}()")
+        # df['s1'] = self.s1()
+        # df['s2'] = self.s2()
+        # df['s3'] = self.s3()
+        # df['s4'] = self.s4()
+        # df['s5'] = self.s5()
+        # df['s6'] = self.s6()
+        # df['s7'] = self.s7()
+        # df['s8'] = self.s8()
+        # df['s9'] = self.s9()
         df.dropna(inplace = True)
         cnt = [1 if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] + df.iloc[idx]['s6'] + df.iloc[idx]['s7'] + df.iloc[idx]['s8'] + df.iloc[idx]['s9'] >= standard else 0 for idx in range(len(df))]
         df['Standard'] = cnt
