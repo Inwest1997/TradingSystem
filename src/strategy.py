@@ -9,6 +9,7 @@ maintain signal : 0
 '''
 
 def rsi_strategy(rsi, up, down):
+    rsi()
     if rsi > up :
         return -1
     elif rsi < down:
