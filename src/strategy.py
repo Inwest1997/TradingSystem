@@ -132,7 +132,8 @@ def buy_sum(df,ticker='GOOG',date= "2022-10-05",*args):
         print('매도')
 
 def test(df, *args):
-    kwargs = [i+'_position' for i in kwargs]
+
+    args = [i+'_position' for i in args]
     df['position'] = df[args].T.apply(lambda x :1 if np.array([i for i in x]).sum() == len(x) else  0)
     return df
 
