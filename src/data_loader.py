@@ -12,22 +12,25 @@ stock_list = pd.read_csv('./Dataset/exist_kis_nasdaq_list.csv')
 info = 'postgresql://junginseo:0000@localhost:5432/stock_db'
 
 class DataGenerator:
-    def __init__(self, data_type, db_info = info, table_name = 'daily_stock') -> None:
+    def __init__(self, data_type, db_info = info, dir = "./Dataset/", table_name = 'daily_stock') -> None:
         '''
         date_type : db or csv
         '''
+        self.dir = dir
         self.table_name = table_name
         self.data_type = data_type
         self.end_date = dt.datetime.today()
         self.db_info = db_info
+        self.origin = pd.DataFrame()
 
-    def read_from_csv(self, dir = './Dataset',ticker = None):
-        origin = pd.read_csv(f'{os.path.join(dir, self.table_name)}.csv', index_col=0)
+    def read_from_csv(self,ticker = None):
+        df = pd.read_csv(f'{os.path.join(self.dir, self.table_name)}.csv')
         if ticker != None:
-            self.origin = self.origin[self.origin['Ticker']==ticker]
-        self.dir = dir
+            df = df[df['Ticker']==ticker]
+        df['Datetime'] = pd.to_datetime(df['Datetime'])
         # print('파일에서 CSV 데이터 불러오기 성공')
-        return origin
+        self.origin = df
+        return df
 
 
     def read_from_db(self, sql = None, ticker = None):
@@ -39,21 +42,21 @@ class DataGenerator:
         if ticker != None:
             sql = f'''SELECT * FROM {self.table_name} WHERE "{self.table_name}"."Ticker" = '{ticker}';'''
 
-        origin = pd.read_sql(sql, conn)
+        df = pd.read_sql(sql, conn)
+        self.origin = df 
         conn.close()
-        origin['Datetime'] = origin['Datetime'].apply(lambda x : x.strftime('%Y-%m-%d')[:10])
-        return origin
+        return df
 
 
     def read_origin_data(self, **kwargs):
         if self.data_type == 'csv':
-            origin = self.read_from_csv(**kwargs)
+            df = self.read_from_csv(**kwargs)
         elif self.data_type == 'db':
-            origin = self.read_from_db(**kwargs)
-        return origin
+            df = self.read_from_db(**kwargs)
+        return df
 
     def date_gap(self):
-        return (self.end_date - dt.datetime.strptime(self.origin.Datetime.max(), '%Y-%m-%d')).days
+        return (self.end_date - self.origin.Datetime.max()).days
 
                 
 
@@ -62,9 +65,9 @@ class DataGenerator:
         self.error_stock = []
 
         if all == True:
-            st_date = dt.datetime.strftime(self.end_date - dt.timedelta(weeks=52*30), '%Y-%m-%d')
+            st_date = self.end_date - dt.timedelta(weeks=52*30)
         else:
-            st_date = dt.datetime.strftime(dt.datetime.strptime(self.origin.Datetime.max(),'%Y-%m-%d') + dt.timedelta(days=1), '%Y-%m-%d')
+            st_date = self.origin.Datetime.max() + dt.timedelta(days=1)
 
         for stock in tqdm(stock_list['Symbol']):
             try:
@@ -141,21 +144,26 @@ class DataGenerator:
 
 
     def data_search(self, ticker= None, stard_date=None, end_date=None):
-        df = self.read_origin_data(ticker = ticker)
-        df['Datetime'] = to_datetime(datetime = df['Datetime'])
+        if self.origin.shape[0] == 0:
+            df = self.read_origin_data()
+        else:
+            df = self.origin
         if stard_date != None:
             df = df[df['Datetime']>=stard_date]
         if end_date != None:
             df = df[df['Datetime']<=end_date]
         if ticker !=  None:
-            return df.set_index('Datetime').drop('Ticker', axis = 1).sort_index()
+            df = df[df['Ticker']==ticker]
+            return df.drop('Ticker',axis=1).set_index('Datetime')
         else:
-            return df
+            print('종목을 입력해주세요')
+            pass
+            
             
 
 
 
-def to_datetime(datetime, type = 'min'):
-    datetime = datetime.apply(lambda x : dt.datetime.strptime(str(x), '%Y-%m-%d'))
-    return datetime
+# def to_datetime(datetime):
+#     datetime = datetime.apply(lambda x : dt.datetime.strptime(str(x), '%Y-%m-%d'))
+#     return datetime
 
