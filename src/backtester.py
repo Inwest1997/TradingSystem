@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from src.data_loader import *
+from data_loader_old import *
 
 import numpy as np
 import pandas as pd

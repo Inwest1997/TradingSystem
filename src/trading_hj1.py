@@ -1,6 +1,6 @@
 from lib2to3.pgen2 import token
 from src.index import *
-from src.data_loader import *
+from data_loader_old import *
 from src.api_practice import *
 from src.secret import *
 
