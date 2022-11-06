@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.index import *
+from .index import *
 import warnings
 warnings.filterwarnings("ignore")
 

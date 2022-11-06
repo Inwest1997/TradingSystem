@@ -1,6 +1,6 @@
 import requests
 import json
-from src.secret import *
+from .secret import *
 #있어야할 메뉴들 생각중
 # 기초정보 확인 (액세스토큰 발급 )   ( 완료 )
 # 1. 잔고조회   (일단 완료)

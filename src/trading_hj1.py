@@ -1,8 +1,8 @@
 from lib2to3.pgen2 import token
-from src.index import *
+from .index import *
 from data_loader_old import *
-from src.api_practice import *
-from src.secret import *
+from .api_practice import *
+from .secret import *
 
 class trading:
     
