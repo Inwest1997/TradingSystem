@@ -29,7 +29,7 @@ class DataGenerator:
             df = df[df['Ticker']==ticker]
         df['Datetime'] = pd.to_datetime(df['Datetime'])
         # print('파일에서 CSV 데이터 불러오기 성공')
-        # self.origin = df
+        self.origin = df
         return df
 
 
@@ -37,18 +37,22 @@ class DataGenerator:
 
         engine = sqlalchemy.create_engine(self.db_info)
         conn = engine.connect()
-        if sql == None:
-            sql = f'''SELECT * FROM {self.table_name}'''
+ 
         if ticker != None:
-            sql = f'''SELECT * FROM {self.table_name} WHERE "{self.table_name}"."Ticker" = '{ticker}';'''
+            sql = f'''SELECT * FROM {self.table_name} WHERE "Ticker" = '{ticker}';'''
+            df = pd.read_sql(sql, conn)
+            self.origin_ticker = df
+        else:
+            sql = f'''SELECT * FROM {self.table_name}'''
+            df = pd.read_sql(sql, conn)
+            self.origin = df 
 
-        df = pd.read_sql(sql, conn)
-        # self.origin = df 
         conn.close()
         return df
 
 
     def read_origin_data(self, **kwargs):
+
         if self.data_type == 'csv':
             df = self.read_from_csv(**kwargs)
         elif self.data_type == 'db':
@@ -63,7 +67,7 @@ class DataGenerator:
 
     def stock_data_generator(self,  error_list = False, stock_list = stock_list, all = False) :
         total_df_list = []
-        self.error_stock = []
+        # self.error_stock = []
 
         if all == True:
             st_date = self.end_date - dt.timedelta(weeks=52*30)
@@ -106,12 +110,12 @@ class DataGenerator:
 
 
 
-    def upload_to_table(self, exist = 'append'):
+    def upload_to_table(self, ):
         try :
             engine = sqlalchemy.create_engine(self.db_info)
             conn = engine.connect()
             self.new.to_sql(self.table_name, conn
-                        , if_exists=  exist# ---append, replace
+                        , if_exists= 'append'
                         , index=False
                         , dtype={
 
@@ -142,51 +146,84 @@ class DataGenerator:
             print(e, '로 인해 업로드 실패')
 
 
-    # def data_search(self, ticker= None, stard_date=None, end_date=None, all = False):
+
+
+    # def data_search(self, ticker= None, stard_date=None, end_date=None):
     #     try:
-    #         if self.origin.shape[0] == 0 and ticker == None:
-    #             df = self.read_origin_data()
-    #             return df
-    #         elif self.origin.shape[0] == 0 and ticker != None:
-    #             df = 
-    #         elif ticker != None:
-    #             df = self.read_origin_data(ticker = ticker)
-    #             if stard_date != None:
-    #                 df = df[df['Datetime']>=stard_date]
-    #             if end_date != None:
-    #                 df = df[df['Datetime']<=end_date]
+    #         if self.origin.shape[0] == 0:
+    #             if  ticker != None:
+    #                 df = self.read_origin_data(ticker = ticker)
+
+    #             else:
+    #                 df = self.read_origin_data()
+
+    #         elif self.origin.shape[0] > 0:
+    #             if  ticker != None:
+    #                 df = self.origin[self.origin['Ticker']==ticker]
+
+    #             else:
+    #                 df = self.origin
+
+    #         if stard_date != None:
+    #             df = df[df['Datetime']>=stard_date]
+    #         if end_date != None:
+    #             df = df[df['Datetime']<=end_date]
+            
+    #         if ticker != None:
     #             return df.drop('Ticker',axis=1).set_index('Datetime')
+    #         else:
+    #             return df
     #     except Exception as e:
     #         print(e, '로 인해 데이터를 불러오지 못 했습니다.')
+            
 
-
-    def data_search(self, ticker= None, stard_date=None, end_date=None, all = False):
+    def data_search(self, ticker= None, stard_date=None, end_date=None):
         try:
-            if self.origin.shape[0] == 0:
-                if  ticker != None:
+            if ticker != None:
+                if self.origin.shape[0] == 0:
                     df = self.read_origin_data(ticker = ticker)
-                else:
-                    df = self.read_origin_data()
-            elif self.origin.shape[0] > 0:
-                if  ticker != None:
+
+                elif self.origin.shape[0] > 0:
                     df = self.origin[self.origin['Ticker']==ticker]
-                else:
+
+                df = df.drop('Ticker',axis=1).set_index('Datetime')
+
+
+            else:
+                if self.origin.shape[0] == 0:
+                    df = self.read_origin_data()
+
+                elif self.origin.shape[0] > 0:
+
                     df = self.origin
+   
             if stard_date != None:
                 df = df[df['Datetime']>=stard_date]
             if end_date != None:
                 df = df[df['Datetime']<=end_date]
             
-            if all == False:
-                return df.drop('Ticker',axis=1).set_index('Datetime')
-            else:
-                return df
+            return df
         except Exception as e:
-            print(e, '로 인해 데이터를 불러오지 못 했습니다.')
-            
+            print(e, '로 인해 데이터를 불러오지 못 했습니다.')          
 
-            
+    # def data_search(self, ticker= None, stard_date=None, end_date=None):
+    #     try:
+    #         if self.origin.shape[0] == 0:
+    #             df = self.read_origin_data()
+    #         else:
+    #             df = self.origin
 
+    #         if ticker != None:
+    #             df = self.origin[self.origin['Ticker']==ticker]
+    #             df = df.drop('Ticker',axis=1).set_index('Datetime')
+   
+    #         if stard_date != None:
+    #             df = df[df['Datetime']>=stard_date]
+    #         if end_date != None:
+    #             df = df[df['Datetime']<=end_date]
+    #         return df
+    #     except Exception as e:
+    #         print(e, '로 인해 데이터를 불러오지 못 했습니다.')  
 
 
 # def to_datetime(datetime):
