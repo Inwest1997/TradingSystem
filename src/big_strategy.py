@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd 
-from src.backtesting import *
-from src.data_loader import *
-from src.strategy import *
+from .backtesting import *
+from .data_loader import *
+from .strategy import *
 
 
 
