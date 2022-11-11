@@ -202,7 +202,7 @@ class DataGenerator:
             if end_date != None:
                 df = df[df['Datetime']<=end_date]
             
-            return df
+            return df.sort_index()
         except Exception as e:
             print(e, '로 인해 데이터를 불러오지 못 했습니다.')          
 

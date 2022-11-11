@@ -41,7 +41,21 @@ def stochastic_strategy(df, **kwrgs):
 
     
 
+def cci_strategy(df, up =80 ,down = 20, **kwrgs):
+    df = pd.concat([df,cci(df, **kwrgs)], axis =1)
+    position = [-1 if df.iloc[i]['CCI']>up else 1 if df.iloc[i]['CCI']<down else 0 for i in range(len(df))] 
+    return position
 
+def wmr_strategy(df, **kwrgs):
+    df = pd.concat([df,wmr(df, **kwrgs)], axis =1)
+    position = [-1 if  df.iloc[i]['wmr'] > 80 else 1 if df.iloc[i]['wmr'] < 20 else 0 for i in range(len(df))] 
+    return position
+
+def obv_strategy(df, **kwrgs):
+    df = pd.concat([df,obv(df, **kwrgs)], axis =1)
+    position =  [-1 if df.iloc[i]['OBV'] > df.iloc[i]['OBV_mv5'] and df.iloc[i-1]['OBV'] < df.iloc[i-1]['OBV_mv5'] else 1 if df.iloc[i]['OBV']<df.iloc[i]['OBV_mv5'] and df.iloc[i-1]['OBV']>df.iloc[i-1]['OBV_mv5'] else 0 for i in range(len(df))] 
+    return position
+    
 
 def sell_sum(df,ticker='GOOG',date= "2022-10-05",*args):
     sum = 0

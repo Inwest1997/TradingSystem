@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from fredapi import Fred
 
 
 def rsi(df, a=1 / 14, w=14):
@@ -106,7 +107,7 @@ def stochastic(df, n=14, m=3, t=3):
         return 'Error. The stochastic indicator requires OHLC data and symbol. Try get_ohlc() to retrieve price data.'
 
 def cci(df, type = '단기'):
-    df['avg price'] = df.apply(lambda x: (x['Open']+ x['Low']+x['High'])/3) 
+    df['avg price'] = [(df.iloc[i]['Open'] + df.iloc[i]['Low'] + df.iloc[i]['High'])/3 for i in range(len(df))]
     p = 0
     if type == '단기':
         p=9
@@ -114,19 +115,74 @@ def cci(df, type = '단기'):
         p=14
 
     df['AMA'] = df['avg price'].rolling(p).mean()
-    df['평균오차'] = df.apply(lambda x: (x['avg price']-x['AMA']).abs())
+    df['평균오차'] = [np.abs(df.iloc[i]['avg price'] - df.iloc[i]['AMA']) for i in range(len(df))]
     df['평균오차'] = df['평균오차'].rolling(p).mean()
-    df['CCI'] = df.apply(lambda x : (x['avg price']-x['AMA'])/(x['평균오차']*0.015))
+    df['CCI'] = [(df.iloc[i]['avg price'] - df.iloc[i]['AMA'])/(df.iloc[i]['평균오차']*0.015) for i in range(len(df))]
     return df[['CCI']]
 
 
-# def obw(df):
+def bond(df):
+    df = df.copy()
+    try:
+        fred = Fred(api_key='d929757b1ad9cd1d5115620a50badb0a')
+        df['T10Y2Y'] = fred.get_series('T10Y2Y', df.index.min())
+        return df[['T10Y2Y']]
+
+    except:
+        return 'Error, Cannot read bond data from FRED'
 
 
+def vix(df):
+    df = df.copy()
+    try:
+        fred = Fred(api_key='d929757b1ad9cd1d5115620a50badb0a')
+        df['VIX'] = fred.get_series('VIXCLS', df.index.min())
+        return df[['VIX']]
+
+    except:
+        return 'Error, Cannot read VIX data from FRED'
 #     return
+
+
+def obv(df):
+    df = df.copy()  
+    OBV = []
+    OBV.append(0)
+    for i in range(1, len(df['Adj Close'])):
+        if df['Adj Close'][i] > df['Adj Close'][i-1]: 
+            OBV.append(OBV[-1] + df['Volume'][i]) 
+        elif df['Adj Close'][i] < df['Adj Close'][i-1]:
+            OBV.append( OBV[-1] - df['Volume'][i])
+        else:
+         OBV.append(OBV[-1])
+    df['OBV'] = OBV
+    df["OBV_mv20"] = df["OBV"].rolling(20).mean()
+    return df[['OBV', 'OBV_mv20']]
+
+
+def wmr(df, 기간 = 7):
+    df = df.copy()
+
+    df["wmr"] = 100 * ((df["High"].rolling(기간).max() - df["Adj Close"]) / (df["High"].rolling(기간).max() - df["High"].rolling(기간).min()) )
+    return df[["wmr"]]
 
 def sma(df, w=5):
     df = df.copy()
     df[f'SMA({w})'] = df['Adj Close'].rolling(w).mean()
 
     return df[[f'SMA({w})']]
+
+def read_all(df):
+    df = df.copy()  
+    df['RSI'] = rsi(df)
+    df[['macd', 'macd_signal', 'macd_oscillator']] = macd(df)
+    df[['en_center', 'en_ub', 'en_lb']] = envelope(df)
+    df[['slow_k', 'slow_d']] = stochastic(df)
+    df['cci'] = cci(df)
+    df['T10Y2Y'] = bond(df)
+    df['VIX'] = vix(df)
+    df[['OBV', 'OBV_mv20']] = obv(df)
+    
+    df['SMA(5)'] = sma(df, w = 5)
+    df['SMA(10)'] = sma(df, w = 10)
+    return df
