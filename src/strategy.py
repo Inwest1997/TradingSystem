@@ -86,3 +86,13 @@ def test(df, *args):
 
 
 
+
+def position_format(df):
+    df = df.copy()
+    new_position = []
+    for idx in range(1, len(df)):
+        if df['position'].iloc[idx] == 0 and df['position'].iloc[idx-1] == 0:
+            new_position.append(2)
+        else: new_position.append(df['position'].iloc[idx])
+    df['postion'] = new_position
+    return df
