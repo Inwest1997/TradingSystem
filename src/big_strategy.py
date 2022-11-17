@@ -6,7 +6,7 @@ from .strategy import *
 
 
 
-temp = ['rsi','macd','envelope','bollinger','stochastic']
+# temp = ['rsi','macd','envelope','bollinger','stochastic']
 
 
 def big_strategy(df):
@@ -16,8 +16,8 @@ def big_strategy(df):
         exec(f"df['{i}_position'] = {i}_strategy(df)")
         wow = BacktestBase(df,f'{i}_position')
         result[i] = wow.res
-    test_list = [[i, result[i]['Accumulated return']] for i in result ]
-    a=0
+    test_list = [[i, result[i]['Accumulated_return']] for i in result ]
+    a = 0
     for i in range(len(test_list)):
         for j in range(len(test_list)):
             if test_list[i][1]>test_list[j][1]:
@@ -26,7 +26,10 @@ def big_strategy(df):
                 test_list[j] = a
     print(test_list)
 
-    df = test(df,test_list[0][0],test_list[1][0])        
+    df = test(df,test_list[0][0],test_list[1][0])
+
+    
+
     return BacktestBase(df,'position',True)        
 
 

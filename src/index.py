@@ -13,7 +13,7 @@ def rsi(df, a=1 / 14, w=14):
     '''
     df = df.copy()
     if len(df) > w:
-        df['Change'] = df['Adj Close'] - df['Adj Close'].shift(1)
+        df['Change'] = df['adjClose'] - df['adjClose'].shift(1)
         df['Up'] = np.where(df['Change'] >= 0, df['Change'], 0)
         df['Down'] = np.where(df['Change'] < 0, df['Change'].abs(), 0)
         # welles moving average
@@ -38,8 +38,8 @@ def macd(df, short=12, long=26, signal=9):
     '''
     df = df.copy()
     try :
-        df['ema_short'] = df['Adj Close'].ewm(span=short).mean()
-        df['ema_long'] = df['Adj Close'].ewm(span=long).mean()
+        df['ema_short'] = df['adjClose'].ewm(span=short).mean()
+        df['ema_long'] = df['adjClose'].ewm(span=long).mean()
         df['macd'] = (df['ema_short'] - df['ema_long']).round(2)
         df['macd_signal'] = df['macd'].ewm(span=signal).mean().round(2)
         df['macd_oscillator'] = (df['macd'] - df['macd_signal']).round(2)
@@ -62,7 +62,7 @@ def envelope(df, w=50, spread=.05):
     :return: Dataframe of Envelope values
     '''
     df = df.copy()
-    df['en_center'] = df['Adj Close'].rolling(w).mean()
+    df['en_center'] = df['adjClose'].rolling(w).mean()
     df['en_ub'] = df['en_center'] * (1 + spread)
     df['en_lb'] = df['en_center'] * (1 - spread)
     return df[['en_center', 'en_ub', 'en_lb']]
@@ -77,8 +77,8 @@ def bollinger(df, w=20, k=2):
     :return: Dataframe of bollinger band values
     '''
     df = df.copy()
-    df['bo_center'] = df['Adj Close'].rolling(w).mean()
-    df['sigma'] = df['Adj Close'].rolling(w).std(ddof=0)
+    df['bo_center'] = df['adjClose'].rolling(w).mean()
+    df['sigma'] = df['adjClose'].rolling(w).std(ddof=0)
     df['bo_ub'] = df['bo_center'] + k * df['sigma']
     df['bo_lb'] = df['bo_center'] - k * df['sigma']
     return df[['bo_center', 'bo_ub', 'bo_lb']]
@@ -96,18 +96,18 @@ def stochastic(df, n=14, m=3, t=3):
     '''
     df = df.copy()
     try:
-        df['fast_k'] = ((df['Adj Close'] - df['Low'].rolling(n).min()) / (
-                    df['High'].rolling(n).max() - df['Low'].rolling(n).min())).round(4) * 100
+        df['fast_k'] = ((df['adjClose'] - df['low'].rolling(n).min()) / (
+                    df['high'].rolling(n).max() - df['low'].rolling(n).min())).round(4) * 100
         df['slow_k'] = df['fast_k'].rolling(m).mean().round(2)
         df['slow_d'] = df['slow_k'].rolling(t).mean().round(2)
         # df.rename(columns={'Close': df['Ticker'].unique().item()}, inplace=True)
-        # df.drop(columns=['High','Open','Low','Volume','Adj Close','fast_k'], inplace=True)
+        # df.drop(columns=['high','open','low','volume','adjClose','fast_k'], inplace=True)
         return df[['slow_k', 'slow_d']]
     except:
         return 'Error. The stochastic indicator requires OHLC data and symbol. Try get_ohlc() to retrieve price data.'
 
 def cci(df, type = '단기'):
-    df['avg price'] = [(df.iloc[i]['Open'] + df.iloc[i]['Low'] + df.iloc[i]['High'])/3 for i in range(len(df))]
+    df['avg price'] = [(df.iloc[i]['open'] + df.iloc[i]['low'] + df.iloc[i]['high'])/3 for i in range(len(df))]
     p = 0
     if type == '단기':
         p=9
@@ -148,11 +148,11 @@ def obv(df):
     df = df.copy()  
     OBV = []
     OBV.append(0)
-    for i in range(1, len(df['Adj Close'])):
-        if df['Adj Close'][i] > df['Adj Close'][i-1]: 
-            OBV.append(OBV[-1] + df['Volume'][i]) 
-        elif df['Adj Close'][i] < df['Adj Close'][i-1]:
-            OBV.append( OBV[-1] - df['Volume'][i])
+    for i in range(1, len(df['adjClose'])):
+        if df['adjClose'][i] > df['adjClose'][i-1]: 
+            OBV.append(OBV[-1] + df['volume'][i]) 
+        elif df['adjClose'][i] < df['adjClose'][i-1]:
+            OBV.append( OBV[-1] - df['volume'][i])
         else:
          OBV.append(OBV[-1])
     df['OBV'] = OBV
@@ -163,12 +163,12 @@ def obv(df):
 def wmr(df, 기간 = 7):
     df = df.copy()
 
-    df["wmr"] = 100 * ((df["High"].rolling(기간).max() - df["Adj Close"]) / (df["High"].rolling(기간).max() - df["High"].rolling(기간).min()) )
+    df["wmr"] = 100 * ((df["high"].rolling(기간).max() - df["adjClose"]) / (df["high"].rolling(기간).max() - df["high"].rolling(기간).min()) )
     return df[["wmr"]]
 
 def sma(df, w=5):
     df = df.copy()
-    df[f'SMA({w})'] = df['Adj Close'].rolling(w).mean()
+    df[f'SMA({w})'] = df['adjClose'].rolling(w).mean()
 
     return df[[f'SMA({w})']]
 
