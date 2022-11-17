@@ -9,12 +9,12 @@ from .strategy import *
 temp = ['rsi','macd','envelope','bollinger','stochastic']
 
 
-def big_strategy2(df):
-    temp = ['rsi','macd','envelope','bollinger','stochastic']
+def big_strategy(df):
+    temp = ['rsi','macd','envelope','bollinger','stochastic' , 'cci']
     result = {}
     for i in temp:
         exec(f"df['{i}_position'] = {i}_strategy(df)")
-        wow = backtest(df,f'{i}_position')
+        wow = BacktestBase(df,f'{i}_position')
         result[i] = wow.res
     test_list = [[i, result[i]['Accumulated return']] for i in result ]
     a=0
@@ -27,6 +27,6 @@ def big_strategy2(df):
     print(test_list)
 
     df = test(df,test_list[0][0],test_list[1][0])        
-    return backtest(df,'position',True)
+    return BacktestBase(df,'position',True)        
 
 
