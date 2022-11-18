@@ -10,8 +10,10 @@ from .strategy import *
 
 
 def big_strategy(df):
+    df = df.copy()
     temp = ['rsi','macd','envelope','bollinger','stochastic' , 'cci']
     result = {}
+    result_list = []
     for i in temp:
         exec(f"df['{i}_position'] = {i}_strategy(df)")
         wow = BacktestBase(df,f'{i}_position')
@@ -28,8 +30,5 @@ def big_strategy(df):
 
     df = test(df,test_list[0][0],test_list[1][0])
 
-    
-
-    return BacktestBase(df,'position',True)        
-
+    return BacktestBase(df,'position',True).res
 

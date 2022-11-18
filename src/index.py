@@ -102,11 +102,12 @@ def stochastic(df, n=14, m=3, t=3):
         df['slow_d'] = df['slow_k'].rolling(t).mean().round(2)
         # df.rename(columns={'Close': df['Ticker'].unique().item()}, inplace=True)
         # df.drop(columns=['high','open','low','volume','adjClose','fast_k'], inplace=True)
-        return df[['slow_k', 'slow_d']]
+        return df[['slow_k', 'fast_k']]
     except:
         return 'Error. The stochastic indicator requires OHLC data and symbol. Try get_ohlc() to retrieve price data.'
 
 def cci(df, type = '단기'):
+    df = df.copy()
     df['avg price'] = [(df.iloc[i]['open'] + df.iloc[i]['low'] + df.iloc[i]['high'])/3 for i in range(len(df))]
     p = 0
     if type == '단기':

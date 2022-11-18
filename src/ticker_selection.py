@@ -70,7 +70,7 @@ class stock_standard():
 
     def calculator(self, standard = 2):
         df = self.df.copy()
-        for i in range(1,10):
+        for i in range(1,9):
             exec(f"df['s{i}']=self.s{i}()")
         # df['s1'] = self.s1()
         # df['s2'] = self.s2()
@@ -82,6 +82,17 @@ class stock_standard():
         # df['s8'] = self.s8()
         # df['s9'] = self.s9()
         df.dropna(inplace = True)
-        cnt = [1 if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] + df.iloc[idx]['s6'] + df.iloc[idx]['s7'] + df.iloc[idx]['s8'] + df.iloc[idx]['s9'] >= standard else 0 for idx in range(len(df))]
-        df['Standard'] = cnt
+        # cnt = [1 if df.iloc[idx]['s1'] + df.iloc[idx]['s2'] + df.iloc[idx]['s3'] + df.iloc[idx]['s4'] + df.iloc[idx]['s5'] + df.iloc[idx]['s6'] + df.iloc[idx]['s7'] + df.iloc[idx]['s8'] + df.iloc[idx]['s9'] >= standard else 0 for idx in range(len(df))]
+        # df['Standard'] = cnt
+        self.calculate = df
         return df
+
+
+# class ticker_Select:
+#     def __init__(self, df, date, cnt):
+#         pass
+#     def ticker_select(self, date = None, cnt = 5):
+#         if date == None:
+#             date = self.calculate['rdatetime'].max()
+#         dummy_df =  self.calculate[self.calculate['rdatetime']==date]
+

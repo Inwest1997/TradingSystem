@@ -112,7 +112,6 @@ def stochastic_strategy(df, **kwrgs):
 
 def cci_strategy(df, up =80 ,down = 20, **kwrgs):
     df = pd.concat([df ,cci(df, **kwrgs)], axis =1)
-
     df["trade"] = [-1 if df.iloc[i]['CCI']>up else 1 if df.iloc[i]['CCI']<down else 0 for i in range(len(df))] 
     buy =0
     position=[]
@@ -198,7 +197,18 @@ def test(df, *args):
             price=0
             position.append(-1)
 
-    df['position']=position
+    a=1
+    k=[]
+    for i in position:
+        if a==1:
+            if i == -1:
+                a=0
+            k.append(i)
+        else:
+            k.append(0)
+
+    df['position']= k
+    # return position
     return df
 
 
